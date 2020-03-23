@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports:
+      - "27017:27017"
+  logistics-bff:
+    image: amitmahajan/logistics-bff:1.3
+    ports:
+      - "8000:8000"
+    environment:
+      MONGODB_HOST: host.docker.internal
+      KAFKA_ZOOKEEPER_CONNECT: kafka:9092
+    depends_on:
+      - mongo
+  commerce-ui:
+    image: amitmahajan/ecommerce-ui:1.0
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:8000/api
+    depends_on:
+      - logistics-bff

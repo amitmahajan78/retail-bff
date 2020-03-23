@@ -1,0 +1,6 @@
+_id,name,createdAt,updatedAt,__v
+ObjectId("5d6ff397e63f94a257a983ee"),Books,""2019-09-04T17:25:43.152Z"",""2019-09-04T17:25:43.152Z"",0
+ObjectId("5d6ff3dae63f94a257a983ef"),Home & Kitchen,""2019-09-04T17:26:50.499Z"",""2019-09-04T17:26:50.499Z"",0
+ObjectId("5d6ff3e0e63f94a257a983f0"),Sports,""2019-09-04T17:26:56.089Z"",""2019-09-04T17:26:56.089Z"",0
+ObjectId("5d6ff3f0e63f94a257a983f1"),Grocery,""2019-09-04T17:27:12.578Z"",""2019-09-04T17:27:12.578Z"",0
+ObjectId("5d6ffafc4b69f0a96dcfc54b"),Clothing,""2019-09-04T17:57:16.105Z"",""2019-09-04T17:57:16.105Z"",0
