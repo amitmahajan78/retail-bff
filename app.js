@@ -22,7 +22,7 @@ const app = express();
 
 // db
 mongoose
-    .connect("mongodb://" + process.env.MONGODB_HOST + ":27017/ecommerce", {
+    .connect(process.env.MONGODB_HOST + "/retaildb?retryWrites=true", {
         useNewUrlParser: true,
         useCreateIndex: true
     })

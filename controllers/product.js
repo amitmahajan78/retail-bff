@@ -4,15 +4,15 @@ const fs = require("fs");
 const Product = require("../models/product");
 const Category = require("../models/category");
 const { errorHandler } = require("../helpers/dbErrorHandler");
-const kafka = require('kafka-node');
+const { Kafka } = require('kafkajs')
 
-// Producer configuration
-const kafkaClientOptions = { sessionTimeout: 100, spinDelay: 100, retries: 2 };
-const kafkaClient = new kafka.KafkaClient(process.env.KAFKA_ZOOKEEPER_CONNECT, 'producer-client', kafkaClientOptions);
-const kafkaProducer = new kafka.HighLevelProducer(kafkaClient);
+const kafka = new Kafka({
+    clientId: 'retail-app',
+    brokers: [process.env.KAFKA_ZOOKEEPER_CONNECT]
+})
 
-kafkaClient.on('error', (error) => console.error('Kafka client error:', error));
-kafkaProducer.on('error', (error) => console.error('Kafka producer error:', error));
+const producer = kafka.producer()
+
 
 exports.productById = (req, res, next, id) => {
     Product.findById(id)
@@ -98,37 +98,28 @@ exports.create = (req, res) => {
                     });
                 }
                 console.log(category.name);
-
-
-                payload = [{
-                    topic: 'product-master',
-                    messages: JSON.stringify({
-                        productId: product.id,
-                        quantity: quantity,
-                        depotquantity: depotquantity,
-                        price: price,
-                        location: 'SWINDON',
-                        supplier: 'International Goods',
-                        category: category.name,
-                        name: name
-                    }),
-                    attributes: 1
-                }];
-
-
-                kafkaProducer.send(payload, function (error, result) {
-                    console.info('Sent payload to Kafka:', payload);
-
-                    if (error) {
-                        console.error('Sending payload failed:', error);
-                        //res.status(500).json(error);
-                    } else {
-                        console.log('Sending payload result:', result);
-                    }
-                });
-            });
-
-
+                {
+                    // Producing
+                    producer.connect()
+                    producer.send({
+                        topic: 'product-master',
+                        messages: [{
+                            value: JSON.stringify({
+                                productId: product.id,
+                                quantity: quantity,
+                                depotquantity: depotquantity,
+                                price: price,
+                                location: 'SWINDON',
+                                supplier: 'International Goods',
+                                category: category.name,
+                                name: name
+                            })
+                        }],
+                    })
+                        .then(console.log)
+                        .catch(e => console.error(`[product/producer] ${e.message}`, e))
+                }
+            })
 
             res.json(result);
         });
@@ -136,6 +127,7 @@ exports.create = (req, res) => {
 
     });
 };
+
 
 exports.remove = (req, res) => {
     let product = req.product;
@@ -354,43 +346,24 @@ exports.decreaseQuantity = (req, res, next) => {
         Product.findById(item._id, function (err, product) {
             console.log("Product Details: " + product);
 
-            const salesObj = {
-                unitPrice: product.price,
-                quantity: parseInt(item.count),
-                sold: product.sold,
-                remainingQuantity: product.quantity,
-                productId: item._id,
-                saleDate: Date.now(),
-                store: "SWINDON"
-            };
-
-            payload = [{
+            // Producing
+            producer.connect()
+            producer.send({
                 topic: process.env.STORE_SALES_TOPIC,
-                messages: JSON.stringify({
-                    unitPrice: product.price,
-                    quantity: parseInt(item.count),
-                    sold: product.sold,
-                    remainingQuantity: product.quantity,
-                    productId: item._id,
-                    saleDate: Date.now(),
-                    store: "SWINDON"
-                }),
-                attributes: 1
-            }];
-
-
-            kafkaProducer.send(payload, function (error, result) {
-                console.info('Sent payload to Kafka:', payload);
-
-                if (error) {
-                    console.error('Sending payload failed:', error);
-                    //res.status(500).json(error);
-                } else {
-                    console.log('Sending payload result:', result);
-                }
-            });
-
-
+                messages: [{
+                    value: JSON.stringify({
+                        unitPrice: product.price,
+                        quantity: parseInt(item.count),
+                        sold: product.sold,
+                        remainingQuantity: product.quantity,
+                        productId: item._id,
+                        saleDate: Date.now(),
+                        store: "SWINDON"
+                    })
+                }],
+            })
+                .then(console.log)
+                .catch(e => console.error(`[sales/producer] ${e.message}`, e))
         });
     });
 };
